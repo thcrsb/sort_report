@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>堆積排序法 (Heap Sort) 動畫</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            background-color: #34495e;
+            padding: 15px;
+            border-radius: 10px;
+            width: fit-content;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+        input[type="number"] {
+            padding: 8px;
+            font-size: 16px;
+            width: 70px;
+            border-radius: 5px;
+            border: 1px solid #bdc3c7;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        #array-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 400px;
+            margin: 0 auto;
+            width: 80%;
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .bar {
+            flex: 1;
+            margin: 0 2px;
+            background-color: #ecf0f1;
+            border-radius: 3px 3px 0 0;
+            transition: height 0.1s ease, background-color 0.1s ease;
+        }
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+        .color-box {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>堆積排序法 (Heap Sort) 動畫</h1>
+    
+    <div class="controls">
+        <div class="input-group">
+            <label for="data-size">資料數量 (5-60):</label>
+            <input type="number" id="data-size" min="5" max="60" value="25">
+        </div>
+        <button id="generate-btn" onclick="generateArray()">產生新陣列</button>
+        <button id="sort-btn" onclick="startSort()">開始排序</button>
+    </div>
+
+    <div id="array-container"></div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="color-box" style="background-color: #ecf0f1;"></div> 尚未排序</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #9b59b6;"></div> 當前父節點 (Root)</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #f1c40f;"></div> 子節點比較中</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #e74c3c;"></div> 發生交換 (Swap)</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #2ecc71;"></div> 已排序區塊</div>
+    </div>
+
+    <script>
+        const container = document.getElementById("array-container");
+        const generateBtn = document.getElementById("generate-btn");
+        const sortBtn = document.getElementById("sort-btn");
+        const sizeInput = document.getElementById("data-size");
+        
+        let arr = [];
+        let bars = [];
+        let animationSpeed = 50;
+
+        function generateArray() {
+            let size = parseInt(sizeInput.value);
+            if (isNaN(size) || size < 5) size = 5;
+            if (size > 60) size = 60;
+            sizeInput.value = size;
+
+            container.innerHTML = "";
+            arr = [];
+            bars = [];
+            
+            for (let i = 0; i < size; i++) {
+                let val = Math.floor(Math.random() * 330) + 20;
+                arr.push(val);
+
+                let bar = document.createElement("div");
+                bar.classList.add("bar");
+                bar.style.height = `${val}px`;
+                container.appendChild(bar);
+                bars.push(bar);
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // 維持最大堆積樹結構的函數 (Heapify)
+        async function heapify(n, i) {
+            let largest = i; // 預設最大值為目前的父節點
+            let left = 2 * i + 1; // 左子節點的索引
+            let right = 2 * i + 2; // 右子節點的索引
+
+            // 標示父節點 (紫色) 與子節點 (黃色) 準備進行比較
+            bars[i].style.backgroundColor = "#9b59b6"; 
+            if (left < n) bars[left].style.backgroundColor = "#f1c40f";
+            if (right < n) bars[right].style.backgroundColor = "#f1c40f";
+            await sleep(animationSpeed);
+
+            // 如果左子節點比父節點大
+            if (left < n && arr[left] > arr[largest]) {
+                largest = left;
+            }
+
+            // 如果右子節點比目前的最大值還大
+            if (right < n && arr[right] > arr[largest]) {
+                largest = right;
+            }
+
+            // 如果最大值不是原本的父節點，代表需要交換
+            if (largest !== i) {
+                // 將即將交換的兩個長條標示為紅色
+                bars[i].style.backgroundColor = "#e74c3c";
+                bars[largest].style.backgroundColor = "#e74c3c";
+                await sleep(animationSpeed);
+
+                // 執行交換
+                let temp = arr[i];
+                arr[i] = arr[largest];
+                arr[largest] = temp;
+
+                // 更新畫面的高度
+                bars[i].style.height = `${arr[i]}px`;
+                bars[largest].style.height = `${arr[largest]}px`;
+                await sleep(animationSpeed);
+
+                // 恢復成預設的白色
+                bars[i].style.backgroundColor = "#ecf0f1";
+                bars[largest].style.backgroundColor = "#ecf0f1";
+                if (left < n) bars[left].style.backgroundColor = "#ecf0f1";
+                if (right < n) bars[right].style.backgroundColor = "#ecf0f1";
+
+                // 遞迴往下確保下層也被調整為最大堆積
+                await heapify(n, largest);
+            } else {
+                // 如果不需要交換，恢復成白色
+                bars[i].style.backgroundColor = "#ecf0f1";
+                if (left < n) bars[left].style.backgroundColor = "#ecf0f1";
+                if (right < n) bars[right].style.backgroundColor = "#ecf0f1";
+            }
+        }
+
+        async function startSort() {
+            generateBtn.disabled = true;
+            sortBtn.disabled = true;
+            sizeInput.disabled = true;
+            
+            let n = arr.length;
+            // 根據資料數量動態調整動畫速度
+            animationSpeed = Math.max(20, 1000 / n);
+
+            // 第一階段：將無序的陣列建構為「最大堆積樹 (Max Heap)」
+            // 從最後一個具有子節點的父節點開始往前整理
+            for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+                await heapify(n, i);
+            }
+
+            // 第二階段：反覆提取最大值並重新整理堆積
+            for (let i = n - 1; i > 0; i--) {
+                // 將目前的根節點 (也就是最大值 arr[0]) 與最後一個節點 (arr[i]) 交換
+                bars[0].style.backgroundColor = "#e74c3c";
+                bars[i].style.backgroundColor = "#e74c3c";
+                await sleep(animationSpeed);
+
+                let temp = arr[0];
+                arr[0] = arr[i];
+                arr[i] = temp;
+
+                bars[0].style.height = `${arr[0]}px`;
+                bars[i].style.height = `${arr[i]}px`;
+                
+                // 被換到後面的最大值已經就位，標示為綠色
+                bars[i].style.backgroundColor = "#2ecc71";
+                bars[0].style.backgroundColor = "#ecf0f1";
+                await sleep(animationSpeed);
+
+                // 拿掉已經排序好的最後一個元素後，將剩下的陣列再次調整為最大堆積
+                await heapify(i, 0);
+            }
+            
+            // 迴圈結束後，位置 0 的元素必定是最小的，標示為綠色
+            bars[0].style.backgroundColor = "#2ecc71";
+
+            generateBtn.disabled = false;
+            sortBtn.disabled = false;
+            sizeInput.disabled = false;
+        }
+
+        // 網頁載入時初始化
+        window.onload = generateArray;
+    </script>
+</body>
+</html>
