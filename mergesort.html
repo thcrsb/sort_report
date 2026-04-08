@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合併排序法 (Merge Sort) 動畫講解</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 0 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        #array-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 400px;
+            margin: 0 auto;
+            width: 80%;
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .bar {
+            width: 20px;
+            margin: 0 2px;
+            background-color: #ecf0f1;
+            border-radius: 3px 3px 0 0;
+            transition: height 0.1s ease, background-color 0.1s ease;
+        }
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+        .color-box {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>合併排序法 (Merge Sort) 動畫</h1>
+    
+    <div class="controls">
+        <button id="generate-btn" onclick="generateArray()">產生新陣列</button>
+        <button id="sort-btn" onclick="startSort()">開始排序</button>
+    </div>
+
+    <div id="array-container"></div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="color-box" style="background-color: #e67e22;"></div> 左側子陣列</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #f1c40f;"></div> 右側子陣列</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #2ecc71;"></div> 合併排序完成</div>
+    </div>
+
+    <script>
+        const container = document.getElementById("array-container");
+        const generateBtn = document.getElementById("generate-btn");
+        const sortBtn = document.getElementById("sort-btn");
+        
+        let arr = [];
+        let bars = [];
+        const ARRAY_SIZE = 30;
+        const ANIMATION_SPEED_MS = 100; // 調整這個數值可以改變動畫速度
+
+        // 產生隨機陣列
+        function generateArray() {
+            container.innerHTML = "";
+            arr = [];
+            bars = [];
+            for (let i = 0; i < ARRAY_SIZE; i++) {
+                // 產生 20 到 350 之間的隨機高度
+                let val = Math.floor(Math.random() * 330) + 20;
+                arr.push(val);
+
+                let bar = document.createElement("div");
+                bar.classList.add("bar");
+                bar.style.height = `${val}px`;
+                container.appendChild(bar);
+                bars.push(bar);
+            }
+        }
+
+        // 延遲函數 (用於動畫暫停)
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // 開始排序的入口函數
+        async function startSort() {
+            generateBtn.disabled = true;
+            sortBtn.disabled = true;
+            
+            await mergeSort(0, arr.length - 1);
+            
+            // 排序完成後將所有長條變成綠色
+            for(let i = 0; i < bars.length; i++) {
+                bars[i].style.backgroundColor = "#2ecc71"; // 最終完成
+            }
+
+            generateBtn.disabled = false;
+            sortBtn.disabled = false;
+        }
+
+        // 遞迴的合併排序主程式
+        async function mergeSort(left, right) {
+            if (left >= right) return;
+            
+            let mid = left + Math.floor((right - left) / 2);
+            
+            await mergeSort(left, mid);
+            await mergeSort(mid + 1, right);
+            await merge(left, mid, right);
+        }
+
+        // 合併兩個已排序的子陣列
+        async function merge(left, mid, right) {
+            let n1 = mid - left + 1;
+            let n2 = right - mid;
+            
+            let L = new Array(n1);
+            let R = new Array(n2);
+
+            // 拷貝資料到暫存陣列，並標示顏色
+            for (let i = 0; i < n1; i++) {
+                L[i] = arr[left + i];
+                bars[left + i].style.backgroundColor = "#e67e22"; // 左側標示為橘色
+            }
+            for (let j = 0; j < n2; j++) {
+                R[j] = arr[mid + 1 + j];
+                bars[mid + 1 + j].style.backgroundColor = "#f1c40f"; // 右側標示為黃色
+            }
+            
+            await sleep(ANIMATION_SPEED_MS);
+
+            let i = 0, j = 0, k = left;
+
+            // 比較並合併回原陣列
+            while (i < n1 && j < n2) {
+                if (L[i] <= R[j]) {
+                    arr[k] = L[i];
+                    i++;
+                } else {
+                    arr[k] = R[j];
+                    j++;
+                }
+                bars[k].style.height = `${arr[k]}px`;
+                bars[k].style.backgroundColor = "#2ecc71"; // 合併後標示為綠色
+                await sleep(ANIMATION_SPEED_MS);
+                k++;
+            }
+
+            // 將左側剩餘的元素合併
+            while (i < n1) {
+                arr[k] = L[i];
+                bars[k].style.height = `${arr[k]}px`;
+                bars[k].style.backgroundColor = "#2ecc71";
+                await sleep(ANIMATION_SPEED_MS);
+                i++;
+                k++;
+            }
+
+            // 將右側剩餘的元素合併
+            while (j < n2) {
+                arr[k] = R[j];
+                bars[k].style.height = `${arr[k]}px`;
+                bars[k].style.backgroundColor = "#2ecc71";
+                await sleep(ANIMATION_SPEED_MS);
+                j++;
+                k++;
+            }
+        }
+
+        // 網頁載入時初始化
+        window.onload = generateArray;
+    </script>
+</body>
+</html>
