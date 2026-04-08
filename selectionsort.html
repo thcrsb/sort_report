@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>選擇排序法 (Selection Sort) 動畫</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            background-color: #34495e;
+            padding: 15px;
+            border-radius: 10px;
+            width: fit-content;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+        input[type="number"] {
+            padding: 8px;
+            font-size: 16px;
+            width: 70px;
+            border-radius: 5px;
+            border: 1px solid #bdc3c7;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        #array-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 400px;
+            margin: 0 auto;
+            width: 80%;
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .bar {
+            flex: 1;
+            margin: 0 2px;
+            background-color: #ecf0f1;
+            border-radius: 3px 3px 0 0;
+            transition: height 0.1s ease, background-color 0.1s ease;
+        }
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+        .color-box {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>選擇排序法 (Selection Sort) 動畫</h1>
+    
+    <div class="controls">
+        <div class="input-group">
+            <label for="data-size">資料數量 (5-60):</label>
+            <input type="number" id="data-size" min="5" max="60" value="25">
+        </div>
+        <button id="generate-btn" onclick="generateArray()">產生新陣列</button>
+        <button id="sort-btn" onclick="startSort()">開始排序</button>
+    </div>
+
+    <div id="array-container"></div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="color-box" style="background-color: #ecf0f1;"></div> 尚未排序</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #3498db;"></div> 當前準備填入的位置</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #f1c40f;"></div> 掃描比較中</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #e74c3c;"></div> 目前找到的最小值</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #2ecc71;"></div> 已排序區塊</div>
+    </div>
+
+    <script>
+        const container = document.getElementById("array-container");
+        const generateBtn = document.getElementById("generate-btn");
+        const sortBtn = document.getElementById("sort-btn");
+        const sizeInput = document.getElementById("data-size");
+        
+        let arr = [];
+        let bars = [];
+
+        // 產生隨機陣列
+        function generateArray() {
+            let size = parseInt(sizeInput.value);
+            if (isNaN(size) || size < 5) size = 5;
+            if (size > 60) size = 60;
+            sizeInput.value = size;
+
+            container.innerHTML = "";
+            arr = [];
+            bars = [];
+            
+            for (let i = 0; i < size; i++) {
+                let val = Math.floor(Math.random() * 330) + 20;
+                arr.push(val);
+
+                let bar = document.createElement("div");
+                bar.classList.add("bar");
+                bar.style.height = `${val}px`;
+                container.appendChild(bar);
+                bars.push(bar);
+            }
+        }
+
+        // 延遲函數
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // 選擇排序主程式
+        async function startSort() {
+            generateBtn.disabled = true;
+            sortBtn.disabled = true;
+            sizeInput.disabled = true;
+            
+            let n = arr.length;
+            // 根據資料量調整動畫速度
+            let animationSpeed = Math.max(10, 1000 / n); 
+
+            for (let i = 0; i < n - 1; i++) {
+                let min_idx = i;
+                
+                // 標示當前準備填入資料的位置為藍色
+                bars[i].style.backgroundColor = "#3498db";
+                
+                // 第一個被當作預設最小值的元素標示為紅色
+                bars[min_idx].style.backgroundColor = "#e74c3c";
+                await sleep(animationSpeed);
+
+                for (let j = i + 1; j < n; j++) {
+                    // 正在掃描的元素標示為黃色
+                    bars[j].style.backgroundColor = "#f1c40f";
+                    await sleep(animationSpeed);
+
+                    if (arr[j] < arr[min_idx]) {
+                        // 如果找到更小的值，把原本的紅條恢復成預設的白色（如果它不是當前的藍色位置的話）
+                        if (min_idx !== i) {
+                            bars[min_idx].style.backgroundColor = "#ecf0f1";
+                        }
+                        
+                        // 更新最小值的索引，並將新的最小值標示為紅色
+                        min_idx = j;
+                        bars[min_idx].style.backgroundColor = "#e74c3c";
+                    } else {
+                        // 如果沒有比較小，掃描完就恢復成白色
+                        bars[j].style.backgroundColor = "#ecf0f1";
+                    }
+                }
+
+                // 一輪掃描結束後，將找到的最小值與前端位置(i)進行交換
+                if (min_idx !== i) {
+                    let temp = arr[min_idx];
+                    arr[min_idx] = arr[i];
+                    arr[i] = temp;
+
+                    // 更新畫面的高度
+                    bars[min_idx].style.height = `${arr[min_idx]}px`;
+                    bars[i].style.height = `${arr[i]}px`;
+                    
+                    // 被換到後面的那個元素恢復成白色
+                    bars[min_idx].style.backgroundColor = "#ecf0f1";
+                }
+
+                // 該回合結束，第 i 個位置已經是正確的最小值，標示為綠色
+                bars[i].style.backgroundColor = "#2ecc71";
+                await sleep(animationSpeed);
+            }
+            
+            // 迴圈結束後，最後一個元素一定也是最大的，直接標示為綠色
+            bars[n - 1].style.backgroundColor = "#2ecc71";
+
+            generateBtn.disabled = false;
+            sortBtn.disabled = false;
+            sizeInput.disabled = false;
+        }
+
+        // 網頁載入時初始化
+        window.onload = generateArray;
+    </script>
+</body>
+</html>

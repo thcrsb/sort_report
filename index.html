@@ -1,169 +1,21 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-tw">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>氣泡排序法動畫</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-    }
-
-    h1 {
-      margin-top: 20px;
-    }
-
-    .nav {
-      margin-top: 20px;
-    }
-
-    .nav a {
-      margin: 0 10px;
-      text-decoration: none;
-      color: #007BFF;
-      font-size: 18px;
-    }
-
-    .container {
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      margin-top: 50px;
-      height: 300px;
-    }
-
-    .bar {
-      width: 50px;
-      margin: 0 5px;
-      background-color: #4CAF50;
-      color: white;
-      text-align: center;
-      line-height: 50px;
-      font-size: 20px;
-      border-radius: 5px;
-    }
-
-    .bar.animate {
-      animation: swap 1s ease-in-out forwards;
-    }
-
-    @keyframes swap {
-      0% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-50px);
-      }
-      100% {
-        transform: translateY(0);
-      }
-    }
-
-    .controls {
-      margin-top: 20px;
-    }
-
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin: 0 10px;
-      cursor: pointer;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>連結範例</title>
 </head>
 <body>
-  <div class="nav">
-    <a href="index.html">氣泡排序法</a>
-    <a href="insertion.html">插入排序法</a>
-  </div>
-  <h1>氣泡排序法動畫</h1>
-  <div class="container" id="bars">
-    <div class="bar" style="height: 100px;">5</div>
-    <div class="bar" style="height: 150px;">3</div>
-    <div class="bar" style="height: 200px;">8</div>
-    <div class="bar" style="height: 120px;">6</div>
-    <div class="bar" style="height: 180px;">4</div>
-    <div class="bar" style="height: 250px;">1</div>
-  </div>
-  <div class="controls">
-    <button id="start">開始排序</button>
-    <button id="reset">重置</button>
-  </div>
-  <div class="description" id="description">按下「開始排序」來執行氣泡排序。</div>
-
-  <script>
-    const bars = document.querySelectorAll('.bar');
-    const description = document.getElementById('description');
-    const startButton = document.getElementById('start');
-    const resetButton = document.getElementById('reset');
-
-    let i = 0;
-    let j = 0;
-    let isSorting = false;
-
-    function bubbleSortStep() {
-      if (i < bars.length - 1) {
-        if (j < bars.length - i - 1) {
-          const bar1 = bars[j];
-          const bar2 = bars[j + 1];
-
-          const value1 = parseInt(bar1.textContent);
-          const value2 = parseInt(bar2.textContent);
-
-          if (value1 > value2) {
-            description.textContent = `交換 ${value1} 和 ${value2}`;
-            bar1.classList.add('animate');
-            bar2.classList.add('animate');
-
-            setTimeout(() => {
-              bar1.classList.remove('animate');
-              bar2.classList.remove('animate');
-
-              // Swap the heights and text
-              const tempHeight = bar1.style.height;
-              const tempText = bar1.textContent;
-
-              bar1.style.height = bar2.style.height;
-              bar1.textContent = bar2.textContent;
-
-              bar2.style.height = tempHeight;
-              bar2.textContent = tempText;
-
-              j++;
-              bubbleSortStep();
-            }, 1000);
-          } else {
-            j++;
-            bubbleSortStep();
-          }
-        } else {
-          j = 0;
-          i++;
-          bubbleSortStep();
-        }
-      } else {
-        description.textContent = '排序完成！';
-        isSorting = false;
-      }
-    }
-
-    startButton.addEventListener('click', () => {
-      if (!isSorting) {
-        isSorting = true;
-        description.textContent = '開始排序...';
-        i = 0;
-        j = 0;
-        bubbleSortStep();
-      }
-    });
-
-    resetButton.addEventListener('click', () => {
-      location.reload(); // Reload the page to reset the bars
-    });
-  </script>
+    <h1>範例頁面</h1>
+    <a href="bubblesort.html">前往氣泡排序動畫頁面</a>
+    <br>
+    <a href="selection_sort.html">前往選擇排序動畫頁面</a>
+    <br>
+    <a href="insertion.html">前往插入排序動畫頁面</a>
+    <br>
+    <a href="mergesort.html">前往合併排序動畫頁面</a>
+    <br>
+    <a href="accumulation_sort.html">前往堆積排序動畫頁面</a>
+    <br>
 </body>
-</html>
 </html>
