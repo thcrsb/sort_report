@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>氣泡排序法 (Bubble Sort) 動畫與自訂資料量</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            background-color: #34495e;
+            padding: 15px;
+            border-radius: 10px;
+            width: fit-content;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+        input[type="number"] {
+            padding: 8px;
+            font-size: 16px;
+            width: 70px;
+            border-radius: 5px;
+            border: 1px solid #bdc3c7;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        #array-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 400px;
+            margin: 0 auto;
+            width: 80%;
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .bar {
+            flex: 1; /* 讓長條自動平均填滿容器寬度 */
+            margin: 0 2px;
+            background-color: #ecf0f1;
+            border-radius: 3px 3px 0 0;
+            transition: height 0.1s ease, background-color 0.1s ease;
+        }
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+        .color-box {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>氣泡排序法 (Bubble Sort) 動畫</h1>
+    
+    <div class="controls">
+        <div class="input-group">
+            <label for="data-size">資料數量 (5-60):</label>
+            <input type="number" id="data-size" min="5" max="60" value="25">
+        </div>
+        <button id="generate-btn" onclick="generateArray()">產生新陣列</button>
+        <button id="sort-btn" onclick="startSort()">開始排序</button>
+    </div>
+
+    <div id="array-container"></div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="color-box" style="background-color: #ecf0f1;"></div> 尚未排序</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #f1c40f;"></div> 相鄰比較中</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #e74c3c;"></div> 發生交換 (Swap)</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #2ecc71;"></div> 該回合最大值已就位</div>
+    </div>
+
+    <script>
+        const container = document.getElementById("array-container");
+        const generateBtn = document.getElementById("generate-btn");
+        const sortBtn = document.getElementById("sort-btn");
+        const sizeInput = document.getElementById("data-size");
+        
+        let arr = [];
+        let bars = [];
+
+        // 產生隨機陣列
+        function generateArray() {
+            // 獲取使用者輸入的數量，並限制在 5 到 60 之間
+            let size = parseInt(sizeInput.value);
+            if (isNaN(size) || size < 5) size = 5;
+            if (size > 60) size = 60;
+            sizeInput.value = size; // 更新輸入框顯示正確數值
+
+            container.innerHTML = "";
+            arr = [];
+            bars = [];
+            
+            for (let i = 0; i < size; i++) {
+                // 產生 20 到 350 之間的隨機高度
+                let val = Math.floor(Math.random() * 330) + 20;
+                arr.push(val);
+
+                let bar = document.createElement("div");
+                bar.classList.add("bar");
+                bar.style.height = `${val}px`;
+                container.appendChild(bar);
+                bars.push(bar);
+            }
+        }
+
+        // 延遲函數
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // 氣泡排序主程式
+        async function startSort() {
+            // 排序期間禁用按鈕與輸入框
+            generateBtn.disabled = true;
+            sortBtn.disabled = true;
+            sizeInput.disabled = true;
+            
+            let n = arr.length;
+            // 動態計算動畫速度：資料量越多，速度越快，以免等待過久
+            let animationSpeed = Math.max(10, 1000 / n); 
+
+            for (let i = 0; i < n - 1; i++) {
+                let swapped = false;
+                
+                for (let j = 0; j < n - i - 1; j++) {
+                    // 標示正在比較的兩個相鄰元素為黃色
+                    bars[j].style.backgroundColor = "#f1c40f";
+                    bars[j + 1].style.backgroundColor = "#f1c40f";
+                    
+                    await sleep(animationSpeed);
+
+                    if (arr[j] > arr[j + 1]) {
+                        // 如果左邊大於右邊，標示為紅色表示準備交換
+                        bars[j].style.backgroundColor = "#e74c3c";
+                        bars[j + 1].style.backgroundColor = "#e74c3c";
+                        await sleep(animationSpeed);
+
+                        // 交換陣列內的數值
+                        let temp = arr[j];
+                        arr[j] = arr[j + 1];
+                        arr[j + 1] = temp;
+
+                        // 更新畫面上的高度
+                        bars[j].style.height = `${arr[j]}px`;
+                        bars[j + 1].style.height = `${arr[j + 1]}px`;
+                        swapped = true;
+                        
+                        await sleep(animationSpeed);
+                    }
+
+                    // 比較完畢，恢復成預設的白色
+                    bars[j].style.backgroundColor = "#ecf0f1";
+                    bars[j + 1].style.backgroundColor = "#ecf0f1";
+                }
+                
+                // 每一回合結束後，最後面那個元素一定是該回合最大的，將其標示為綠色
+                bars[n - i - 1].style.backgroundColor = "#2ecc71";
+            }
+            
+            // 最後一個元素必定是最小的，直接標示為綠色
+            bars[0].style.backgroundColor = "#2ecc71";
+
+            // 排序完成，恢復按鈕與輸入框功能
+            generateBtn.disabled = false;
+            sortBtn.disabled = false;
+            sizeInput.disabled = false;
+        }
+
+        // 網頁載入時初始化
+        window.onload = generateArray;
+    </script>
+</body>
+</html>
