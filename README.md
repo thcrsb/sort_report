@@ -1,4 +1,4 @@
-# sort_report
+排序報告 https://thcrsb.github.io/sort_report/
 # 排序演算法效能與複雜度分析報告
 
 ## 一、 五個排序法介紹
