@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>不斷線英文紀錄翻譯器</title>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: #0f0f0f;
+            color: #efefef;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .controls {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            transition: 0.3s;
+        }
+
+        #start-btn { background-color: #28a745; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); }
+        #start-btn.recording { background-color: #dc3545; animation: pulse 2s infinite; }
+        
+        #reset-btn { background-color: #444; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.6); }
+            70% { box-shadow: 0 0 0 15px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
+        #history-container {
+            width: 100%;
+            max-width: 800px;
+            flex-grow: 1;
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .transcript-item {
+            padding-bottom: 12px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .en { color: #aaa; font-size: 1.1em; margin-bottom: 4px; }
+        .zh { color: #ffcc00; font-size: 1.3em; font-weight: bold; }
+
+        #interim-display {
+            width: 100%;
+            max-width: 800px;
+            min-height: 40px;
+            margin-top: 10px;
+            color: #00d4ff;
+            font-style: italic;
+        }
+
+        .status-bar {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .active { color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <button id="start-btn">開始錄音</button>
+        <button id="reset-btn">清空</button>
+    </div>
+    
+    <div class="status-bar">
+        <span>狀態: <span id="status-text">就緒</span></span>
+        <span>防休眠: <span id="wakelock-text">未啟動</span></span>
+    </div>
+
+    <div id="history-container"></div>
+    <div id="interim-display"></div>
+
+    <script>
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const statusText = document.getElementById('status-text');
+        const wakelockText = document.getElementById('wakelock-text');
+        const historyContainer = document.getElementById('history-container');
+        const interimDisplay = document.getElementById('interim-display');
+
+        let recognition;
+        let isManualStop = true;
+        let wakeLock = null;
+
+        // 1. 初始化語音辨識
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                statusText.textContent = "運作中";
+                statusText.className = "active";
+                startBtn.textContent = "停止錄音";
+                startBtn.classList.add('recording');
+                requestWakeLock(); // 開始時啟動防休眠
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        appendAndTranslate(transcript);
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                interimDisplay.textContent = interimTranscript;
+            };
+
+            recognition.onend = () => {
+                // 如果不是手動按停止，就自動秒重啟
+                if (!isManualStop) {
+                    console.log("偵測到中斷，正在重啟...");
+                    recognition.start();
+                } else {
+                    statusText.textContent = "已停止";
+                    statusText.className = "";
+                    startBtn.textContent = "開始錄音";
+                    startBtn.classList.remove('recording');
+                    releaseWakeLock(); // 停止時釋放防休眠
+                }
+            };
+
+            recognition.onerror = (e) => {
+                console.error("辨識錯誤:", e.error);
+                if (e.error === 'network') statusText.textContent = "網路錯誤";
+            };
+        }
+
+        // 2. 防止休眠功能 (Wake Lock)
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakelockText.textContent = "已啟動 (螢幕常亮)";
+                    wakelockText.classList.add('active');
+                }
+            } catch (err) {
+                console.log("Wake Lock 無法啟動:", err.name, err.message);
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release();
+                wakeLock = null;
+                wakelockText.textContent = "未啟動";
+                wakelockText.classList.remove('active');
+            }
+        }
+
+        // 3. 翻譯與顯示
+        async function appendAndTranslate(text) {
+            const item = document.createElement('div');
+            item.className = 'transcript-item';
+            item.innerHTML = `<div class="en">${text}</div><div class="zh">翻譯中...</div>`;
+            historyContainer.appendChild(item);
+            historyContainer.scrollTop = historyContainer.scrollHeight;
+
+            try {
+                const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|zh-TW`);
+                const data = await res.json();
+                item.querySelector('.zh').textContent = data.responseData.translatedText;
+            } catch {
+                item.querySelector('.zh').textContent = "[翻譯失敗]";
+            }
+            historyContainer.scrollTop = historyContainer.scrollHeight;
+        }
+
+        // 按鈕事件
+        startBtn.addEventListener('click', () => {
+            if (isManualStop) {
+                isManualStop = false;
+                recognition.start();
+            } else {
+                isManualStop = true;
+                recognition.stop();
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            if (confirm('清空紀錄？')) historyContainer.innerHTML = '';
+        });
+
+        // 監聽網頁切換回來的事件 (確保 Wake Lock 重新啟動)
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+    </script>
+</body>
+</html>
